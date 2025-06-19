@@ -1,0 +1,9 @@
+azure-functions
+azure-storage-blob
+requests
+datetime
+youtube_transcript_api
+argparse
+pandas
+openai
+dotenv

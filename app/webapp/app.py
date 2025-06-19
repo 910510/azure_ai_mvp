@@ -1,23 +1,71 @@
+import os
+from dotenv import load_dotenv
 import streamlit as st
-import random
+from openai import AzureOpenAI
 
-# Generate a random number between 1 and 100
-if 'random_number' not in st.session_state:
-    st.session_state.random_number = random.randint(1, 100)
+load_dotenv()
 
-st.title("숫자 맞추기 게임")
-st.write("1부터 100 사이의 숫자를 맞춰보세요!")
+### Environment
+### OpenAI
+AZURE_OPENAI_ENDPOINT=os.getenv("AZURE_OPENAI_ENDPOINT")
+AZURE_OPENAI_API_KEY=os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_OPENAI_DEPLOYMENT=os.getenv("AZURE_OPENAI_DEPLOYMENT")
+AZURE_OPENAI_VERSION=os.getenv("AZURE_OPENAI_VERSION")
+model_name = "gpt-4o-mini"
 
-# Input for user's guess
-guess = st.number_input("숫자를 입력하세요:", min_value=1, max_value=100, step=1)
+### AI Search
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT")
+AZURE_SEARCH_ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT")
+AZURE_SEARCH_ADMIN_KEY = os.getenv("AZURE_SEARCH_ADMIN_KEY")
+AZURE_SEARCH_INDEX_NAME = os.getenv("AZURE_SEARCH_INDEX_NAME")
 
-if st.button("확인"):
-    if guess < st.session_state.random_number:
-        st.write("더 큰 숫자입니다!")
-    elif guess > st.session_state.random_number:
-        st.write("더 작은 숫자입니다!")
-    else:
-        st.write("정답입니다! 🎉")
-        # Reset the game
-        st.session_state.random_number = random.randint(1, 100)
-        st.write("새로운 숫자가 설정되었습니다. 다시 맞춰보세요!")
+# Initialize Azure OpenAI client
+client = AzureOpenAI(
+    api_version=AZURE_OPENAI_VERSION,
+    azure_endpoint=AZURE_OPENAI_ENDPOINT,
+    api_key=AZURE_OPENAI_KEY,
+)
+
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {
+            "role": "system",
+            "content": "You are a travel assistant that provides information on travel service available from Margie's Travel."
+        }
+    ]
+
+for messages in st.session_state.messages:
+    st.chat_message(messages["role"]).write(messages["content"])
+
+def get_openai_response(messages):
+    rag_params = {
+        "data_sources": [
+            {
+                "type": "azure_search",
+                "parameters": {
+                    "endpoint": AZURE_SEARCH_ENDPOINT,
+                    "index_name": AZURE_SEARCH_INDEX_NAME,
+                    "authentication": {
+                        "type": "api_key",
+                        "key": AZURE_SEARCH_ADMIN_KEY,
+                    },
+                    "query_type": "vector",
+                    "embedding_dependency": {
+                        "type": "deployment_name",
+                        "deployment_name": AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
+                    },
+                }
+            }
+        ],
+    }
+    
+    response = client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,
+        messages=messages,
+        extra_body=rag_params
+    )
+
+    completion = response.choices[0].message.content
+    return completion
+
+if user_input := st.chat_input("Questions:"):
