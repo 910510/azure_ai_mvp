@@ -1,0 +1,82 @@
+$schema: https://azuremlschemas.azureedge.net/latest/pipelineJob.schema.json
+type: pipeline
+experiment_name: vod-content-preprocess
+display_name: content-preprocessing-pipeline
+
+jobs:
+  fetch_youtube_data:
+    type: command
+    display_name: Fetch YouTube Data
+    code: ../scripts/
+    command: >-
+      python fetch_youtube_data.py --output_path ${{outputs.youtube_raw_data}}
+    environment: azureml:basic-env@latest
+    compute: azureml:cpu-cluster
+    outputs:
+      youtube_raw_data: {}
+    environment_variables:
+      YOUTUBE_API_KEY: ${{env.YOUTUBE_API_KEY}}
+
+  extract_and_clean_text:
+    type: command
+    display_name: Clean Text
+    code: ../scripts/
+    command: >-
+      python clean_text.py --raw_input_path ${{inputs.raw_input_path}} --cleaned_output_path ${{outputs.cleaned_output_path}}
+    environment: azureml:basic-env@latest
+    compute: azureml:cpu-cluster
+    inputs:
+      raw_input_path: ${{parent.jobs.fetch_youtube_data.outputs.youtube_raw_data}}
+    outputs:
+      cleaned_output_path: {}
+
+  gpt_summary_and_labeling:
+    type: command
+    display_name: GPT Summary & Labeling
+    code: ../scripts/
+    command: >-
+      python gpt_labeling.py --cleaned_data ${{inputs.cleaned_data}} --labeled_output_path ${{outputs.labeled_output_path}}
+    environment: azureml:openai-env@latest
+    compute: azureml:cpu-cluster
+    inputs:
+      cleaned_data: ${{parent.jobs.extract_and_clean_text.outputs.cleaned_output_path}}
+    outputs:
+      labeled_output_path: {}
+    environment_variables:
+      AZURE_OPENAI_API_KEY: ${{env.AZURE_OPENAI_API_KEY}}
+      AZURE_OPENAI_ENDPOINT: ${{env.AZURE_OPENAI_ENDPOINT}}
+      AZURE_OPENAI_DEPLOYMENT: "media-gpt-4o-mini"
+      AZURE_OPENAI_VERSION: "2025-01-01-preview"
+
+  embedding_generation:
+    type: command
+    display_name: Generate Embeddings
+    code: ../scripts/
+    command: >-
+      python embedding_generate.py --labeled_data ${{inputs.labeled_data}} --output_path ${{outputs.embeddings_output_path}}
+    environment: azureml:openai-env@latest
+    compute: azureml:cpu-cluster
+    inputs:
+      labeled_data: ${{parent.jobs.gpt_summary_and_labeling.outputs.labeled_output_path}}
+    outputs:
+      embeddings_output_path: {}
+    environment_variables:
+      AZURE_OPENAI_API_KEY: ${{env.AZURE_OPENAI_API_KEY}}
+      AZURE_OPENAI_ENDPOINT: ${{env.AZURE_OPENAI_ENDPOINT}}
+      AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "media-text-embedding-ada-002"
+      AZURE_OPENAI_EMBEDDING_VERSION: "2023-05-15"
+
+  upload_to_ai_search:
+    type: command
+    display_name: Upload to Azure AI Search
+    code: ../scripts/
+    command: >-
+      python upload_to_aisearch.py --embedding_data ${{inputs.embedding_data}}
+    environment: azureml:basic-env@latest
+    compute: azureml:cpu-cluster
+    inputs:
+      embedding_data: ${{parent.jobs.embedding_generation.outputs.embeddings_output_path}}
+    environment_variables:
+      AZURE_SEARCH_ENDPOINT: ${{env.AZURE_SEARCH_ENDPOINT}}
+      AZURE_SEARCH_ADMIN_KEY: ${{env.AZURE_SEARCH_ADMIN_KEY}}
+      AZURE_SEARCH_INDEX_NAME: "media"

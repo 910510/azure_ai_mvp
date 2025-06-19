@@ -1,0 +1,15 @@
+name: basic-env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - pandas
+      - openai
+      - azure-search-documents
+      - requests
+      - youtube-transcript-api
+      - beautifulsoup4
+      - selenium

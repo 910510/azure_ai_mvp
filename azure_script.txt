@@ -1,0 +1,17 @@
+### computer cluster
+az ml compute create --name cpu-cluster --size STANDARD_DS3_V2 --type AmlCompute --min-instances 0 --max-instances 4
+
+### environment
+az ml environment create --file projects/environments/basic-env.yaml
+
+### pipeline
+az ml job create --type pipeline --file youtube_pipeline.yml --resource-group media-recommend-RG --workspace-name media-recommend-ml
+
+az ml job create --file projects/deployments/youtube_pipeline.yml --resource-group media-recommend-RG --workspace-name media-recommend-ml
+
+
+az ml compute list --resource-group media-recommend-RG --workspace-name media-recommend-ml
+
+
+
+az login --use-device-code --tenant c218bf42-b3a6-4e86-bc07-47994b283e08 --scope https://management.core.windows.net//.default

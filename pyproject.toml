@@ -1,0 +1,28 @@
+[project]
+name = "azure-ai-mvp"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "ghnam",email = "ghnam@kakao.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<=3.12"
+dependencies = [
+    "dotenv (>=0.9.9,<0.10.0)",
+    "bs4 (>=0.0.2,<0.0.3)",
+    "requests (>=2.32.4,<3.0.0)",
+    "selenium (>=4.33.0,<5.0.0)",
+    "azure-storage-blob (>=12.25.1,<13.0.0)",
+    "youtube-transcript-api (>=1.1.0,<2.0.0)",
+    "pandas (>=2.3.0,<3.0.0)",
+    "openai (>=1.88.0,<2.0.0)",
+    "azureml (>=0.2.7,<0.3.0)"
+]
+
+[tool.poetry]
+packages = [{include = "002"}]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
