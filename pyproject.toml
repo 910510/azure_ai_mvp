@@ -16,7 +16,8 @@ dependencies = [
     "youtube-transcript-api (>=1.1.0,<2.0.0)",
     "pandas (>=2.3.0,<3.0.0)",
     "openai (>=1.88.0,<2.0.0)",
-    "azureml (>=0.2.7,<0.3.0)"
+    "azureml (>=0.2.7,<0.3.0)",
+    "streamlit (>=1.46.0,<2.0.0)"
 ]
 
 [tool.poetry]
