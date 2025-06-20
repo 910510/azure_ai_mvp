@@ -73,6 +73,38 @@
 
 ---
 
+## ML 파이프라인 상세 설명
+
+본 프로젝트의 ML 파이프라인은 Azure Machine Learning을 활용하여 다음과 같은 단계로 구성됩니다:
+
+1. **YouTube 데이터 수집**
+    - `fetch_youtube_data.py`
+    - 유튜브 API를 통해 트렌드/리뷰/추천 영상 및 자막 데이터를 수집합니다.
+    - 결과: `youtube_raw_data.csv`
+
+2. **텍스트 정제**
+    - `clean_text.py`
+    - 수집된 데이터(제목, 설명, 자막)를 소문자화, 특수문자 제거 등으로 정제합니다.
+    - 결과: `cleaned_output.csv`
+
+3. **GPT 요약 및 라벨링**
+    - `gpt_labeling.py`
+    - Azure OpenAI GPT를 활용해 각 영상의 요약, 장르, 분위기 등 라벨링 정보를 생성합니다.
+    - 결과: `labeled_output.csv`
+
+4. **임베딩 생성**
+    - `embedding_generate.py`
+    - 요약/라벨링된 텍스트를 OpenAI 임베딩 모델로 벡터화합니다.
+    - 결과: `embedding_for_aisearch.json`
+
+5. **Azure AI Search 업로드**
+    - `upload_to_aisearch.py`
+    - 생성된 임베딩 데이터를 Azure AI Search 인덱스에 업로드하여, 검색 기반 RAG 서비스에 활용합니다.
+
+각 단계는 `ml_pipeline/deployments/youtube_pipeline.yml`에 정의되어 있으며, Azure ML Studio 또는 CLI를 통해 전체 파이프라인을 자동 실행할 수 있습니다.
+
+---
+
 ## 설치 및 실행 방법
 
 ### 1. 환경 준비
@@ -104,6 +136,33 @@ python ml_pipeline/scripts/upload_to_aisearch.py
 ```bash
 cd app/webapp
 streamlit run chat.py
+```
+
+---
+
+## 환경 변수 예시 (.env)
+
+```env
+# Azure OpenAI
+AZURE_OPENAI_API_KEY=your-azure-openai-api-key
+AZURE_OPENAI_ENDPOINT=https://your-openai-endpoint.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT=your-deployment-name
+AZURE_OPENAI_VERSION=2025-01-01-preview
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=your-embedding-deployment
+AZURE_OPENAI_EMBEDDING_VERSION=2023-05-15
+
+# Azure AI Search
+AZURE_SEARCH_ENDPOINT=https://your-search-endpoint.search.windows.net/
+AZURE_SEARCH_ADMIN_KEY=your-search-admin-key
+AZURE_SEARCH_INDEX_NAME=media
+
+# Youtube & 외부 API
+YOUTUBE_API_KEY=your-youtube-api-key
+TMDB_API_KEY=your-tmdb-api-key
+SERP_API_KEY=your-serp-api-key
+NEWS_API_KEY=your-news-api-key
+NAVER_SEARCH_CLIENT_ID=your-naver-client-id
+NAVER_SEARCH_CLIENT_SECRET=your-naver-client-secret
 ```
 
 ---
