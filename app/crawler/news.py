@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import requests
 
-load_dotenv
+load_dotenv()
 
 url = ('https://newsapi.org/v2/everything?'
        'q=한국 인기 영화&'
